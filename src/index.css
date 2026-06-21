@@ -1,0 +1,46 @@
+@font-face {
+  font-family: "Google Sans";
+  src: url("./assets/fonts/GoogleSans-Variable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Google Sans";
+  src: url("./assets/fonts/GoogleSans-Italic-Variable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+html,
+body,
+button,
+input,
+textarea {
+  font-family: "Google Sans", Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #111;
+  color: #eee;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}

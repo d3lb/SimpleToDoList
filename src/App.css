@@ -1,0 +1,408 @@
+h1 {
+  text-align: left;
+}
+
+.appShell {
+  position: relative;
+  width: min(800px, 100%);
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.app {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Sidebar */
+
+.listSidebar,
+.listSidebar * {
+  box-sizing: border-box;
+}
+
+.listSidebar {
+  position: absolute;
+  top: 24px;
+  right: calc(100% + 20px);
+  width: 220px;
+  padding: 16px;
+  border: 1px solid #333;
+  border-radius: 10px;
+  background: #181818;
+}
+
+.listSidebar h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.addListRow {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.addListRow .textInputWrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.addListInput {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  outline: none;
+  background: #181818;
+  color: #eee;
+}
+
+.addListInput::placeholder {
+  color: #666;
+}
+
+.addListInput:focus {
+  border-color: #555;
+}
+
+.addListBtn {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #181818;
+  color: #eee;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.addListBtn:hover {
+  background: #222;
+}
+
+.listNav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #181818;
+}
+
+.listItem:hover {
+  background: #222;
+}
+
+.activeList {
+  border-color: #666;
+  background: #252525;
+}
+
+.listBtn {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: none;
+  background: transparent;
+  color: #eee;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.renameListInput {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #eee;
+}
+
+.sidebarActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #333;
+}
+
+.sidebarActions button {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #181818;
+  color: #eee;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebarActions button:hover:not(:disabled) {
+  background: #222;
+}
+
+.sidebarActions button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* Task list */
+
+.listBox {
+  padding: 20px;
+  border: 1px solid #333;
+  border-radius: 10px;
+  background: #181818;
+}
+
+.emptyListBox {
+  color: #777;
+}
+
+.taskLine {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  margin: 5px;
+  padding: 5px;
+  border-bottom: 1px solid #2a2a2a;
+  border-radius: 10px;
+  cursor: text;
+  user-select: none;
+  touch-action: none;
+}
+
+.taskLine:hover {
+  background: #222;
+}
+
+.taskLine:active {
+  cursor: grabbing;
+}
+
+.taskLine:last-child {
+  border-bottom: none;
+}
+
+.taskCheckbox {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #eee;
+}
+
+.taskCheckbox:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.doneText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.textInputWrap {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.editTaskInput,
+.newTaskInput {
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #eee;
+  font-size: 16px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.newLine{
+  padding: 10px 5px 10px 5px;
+}
+
+.addListInput,
+.renameListInput {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.newTaskInput::placeholder {
+  color: #666;
+}
+
+.deleteBtn {
+  flex: 0 0 auto;
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #aaa;
+  font-size: 25px;
+  cursor: pointer;
+}
+
+.deleteBtn:hover {
+  color: rgb(255, 100, 100);
+}
+
+.newLine .taskCheckbox,
+.newLine .newTaskInput,
+.editingLine .taskCheckbox,
+.editingLine .editTaskInput,
+.editingLine .deleteBtn {
+  opacity: 0.8;
+}
+
+/* Modal */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.modalBox {
+  width: min(360px, 100%);
+  padding: 18px;
+  border: 1px solid #333;
+  border-radius: 12px;
+  background: #181818;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.modalBox h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.modalBox p {
+  margin: 0;
+  color: #aaa;
+  line-height: 1.4;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.modalBtn {
+  padding: 8px 12px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #202020;
+  color: #eee;
+  cursor: pointer;
+}
+
+.modalBtn:hover {
+  background: #292929;
+}
+
+.confirmModalBtn {
+  border-color: #555;
+}
+
+.dangerModalBtn {
+  border-color: rgb(120, 45, 45);
+  color: rgb(255, 120, 120);
+}
+
+.dangerModalBtn:hover {
+  background: rgb(55, 25, 25);
+}
+
+/* Right-click menu */
+
+.contexify {
+  --contexify-zIndex: 1000;
+  --contexify-menu-minWidth: 110px;
+  --contexify-menu-padding: 6px;
+  --contexify-menu-radius: 8px;
+  --contexify-menu-bgColor: rgba(40, 40, 40, 0.98);
+  --contexify-menu-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  --contexify-separator-color: #3a3a3a;
+  --contexify-separator-margin: 5px;
+  --contexify-itemContent-padding: 7px 10px;
+  --contexify-activeItem-radius: 6px;
+  --contexify-item-color: #eee;
+  --contexify-activeItem-color: #eee;
+  --contexify-activeItem-bgColor: #333;
+  --contexify-rightSlot-color: #6f6e77;
+  --contexify-activeRightSlot-color: #fff;
+  --contexify-arrow-color: #6f6e77;
+  --contexify-activeArrow-color: #fff;
+}
+
+.contexify.contextMenu {
+  border: 1px solid #333;
+}
+
+.contexify__item {
+  border-radius: 6px;
+}
+
+.contexify__item__content {
+  font-size: 14px;
+}
+
+.contexify__item.dangerMenuItem:hover > .contexify__item__content,
+.contexify__item.dangerMenuItem:focus > .contexify__item__content {
+  color: rgb(255, 100, 100);
+}
+
+.contexify__separator,
+.contextMenuSeparator {
+  height: 1px;
+  margin: 5px 4px;
+  background: #3a3a3a;
+}
+
+/* Responsive */
+
+@media (max-width: 1250px) {
+  .appShell {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .listSidebar {
+    position: static;
+    width: 100%;
+  }
+}
