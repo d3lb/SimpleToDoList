@@ -6,7 +6,6 @@ import {
   deleteTask as removeTaskAndChildren,
   hasChildren,
   insertSibling,
-  outdentTask,
   removeTaskPromotingChildren,
   toggleIndent,
   toggleTaskDone
@@ -255,9 +254,8 @@ export function useTasks() {
   }
 
   // Tab: nest under the row above, or step back out to the top level.
-  // Shift+Tab only ever steps out.
-  function toggleTaskIndent(id, { outdentOnly = false } = {}) {
-    const reindent = prev => outdentOnly ? outdentTask(prev, id) : toggleIndent(prev, id);
+  function toggleTaskIndent(id) {
+    const reindent = prev => toggleIndent(prev, id);
 
     // The row can move in the DOM, which drops focus; ask for it back.
     setFocusTaskId(id);

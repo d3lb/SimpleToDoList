@@ -50,7 +50,7 @@ function TaskRow({
         skipBlurRef.current = false;
       }, 0);
 
-      onToggleIndent(task.id, { outdentOnly: e.shiftKey });
+      onToggleIndent(task.id);
       return;
     }
 
