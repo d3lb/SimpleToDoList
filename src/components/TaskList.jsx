@@ -1,35 +1,35 @@
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import TaskRow from "./TaskRow";
 
 function TaskList({
-  tasks,
-  editingId,
-  editingText,
-  setEditingText,
+  entries,
+  focusTaskId,
+  dropTarget,
+  onFocusHandled,
   onToggle,
   onDelete,
-  onStartEdit,
-  onSaveEdit,
-  onEditKeyDown
+  onTextChange,
+  onCommit,
+  onSubmit,
+  onBackspaceEmpty,
+  onToggleIndent
 }) {
-  return (
-    <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
-      {tasks.map(task => (
-        <TaskRow
-          key={task.id}
-          task={task}
-          isEditing={editingId === task.id}
-          editingText={editingText}
-          setEditingText={setEditingText}
-          onToggle={onToggle}
-          onDelete={onDelete}
-          onStartEdit={onStartEdit}
-          onSaveEdit={onSaveEdit}
-          onEditKeyDown={onEditKeyDown}
-        />
-      ))}
-    </SortableContext>
-  );
+  return entries.map(({ task, isSubtask }) => (
+    <TaskRow
+      key={task.id}
+      task={task}
+      isSubtask={isSubtask}
+      isFocused={focusTaskId === task.id}
+      dropHint={dropTarget?.id === task.id ? dropTarget.mode : null}
+      onFocusHandled={onFocusHandled}
+      onToggle={onToggle}
+      onDelete={onDelete}
+      onTextChange={onTextChange}
+      onCommit={onCommit}
+      onSubmit={onSubmit}
+      onBackspaceEmpty={onBackspaceEmpty}
+      onToggleIndent={onToggleIndent}
+    />
+  ));
 }
 
 export default TaskList;

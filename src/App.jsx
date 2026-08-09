@@ -1,17 +1,39 @@
-import { useEffect, useState } from "react";
-import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { useEffect, useMemo, useState } from "react";
+import { closestCenter, DndContext, PointerSensor, pointerWithin, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis, restrictToWindowEdges } from "@dnd-kit/modifiers";
 import "./App.css";
-import ContextMenus from "./components/ContextMenus";
 import ListSidebar from "./components/ListSidebar";
 import NewTaskLine from "./components/NewTaskLine";
 import TaskList from "./components/TaskList";
 import { useTasks } from "./hooks/useTasks";
+import { useUpdateStatus } from "./hooks/useUpdateStatus";
 import ConfirmModal from "./components/ConfirmModal";
+import { buildSections, resolveDropMode } from "./utils/taskTree";
+import { loadShowCompleted, saveShowCompleted } from "./utils/uiPreferences";
 
+// A press on the grip starts a drag once it travels this far.
+const DRAG_START_DISTANCE = 6;
+
+// Share of a row's height at each edge that means "drop between rows".
+// The band in the middle means "drop onto this row" and nests instead.
+const EDGE_BAND = 0.3;
+
+// Rows hold still while dragging; a drop indicator shows the landing spot
+// instead, because a nested drop can't be previewed by shifting rows.
+const noShift = () => null;
+
+// Prefer whatever is under the pointer; fall back to the nearest row when
+// the pointer sits in the gap between two of them.
+function collisionDetection(args) {
+  const pointerCollisions = pointerWithin(args);
+  return pointerCollisions.length ? pointerCollisions : closestCenter(args);
+}
 
 function App() {
   const {
+    isLoading,
+    storageError,
     lists,
     activeList,
     activeListId,
@@ -19,33 +41,49 @@ function App() {
     addList,
     deleteList,
     renameList,
-    sortedTasks,
-    newTaskText,
-    setNewTaskText,
-    editingId,
-    editingText,
-    setEditingText,
+    visibleTasks,
+    focusTaskId,
+    clearFocusRequest,
+    addTask,
+    setTaskText,
     toggleTask,
     deleteTask,
-    startEdit,
-    saveEdit,
-    handleNewTaskKeyDown,
-    handleEditKeyDown,
-    reorderTask,
+    deleteTaskAndFocusPrevious,
+    commitTask,
+    submitTask,
+    moveTask,
+    toggleTaskIndent,
     importData,
     exportData,
     exportAllData
   } = useTasks();
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: DRAG_START_DISTANCE } })
+  );
+
+  const { status: updateStatus, installUpdate } = useUpdateStatus();
+
+  const [dropTarget, setDropTarget] = useState(null);
+  const [showCompleted, setShowCompleted] = useState(loadShowCompleted);
+
+  const sections = useMemo(() => buildSections(activeList?.tasks ?? []), [activeList]);
+  const renderedEntries = showCompleted ? [...sections.open, ...sections.done] : sections.open;
+
+  function toggleShowCompleted() {
+    setShowCompleted(previous => {
+      saveShowCompleted(!previous);
+      return !previous;
+    });
+  }
 
   useEffect(() => {
     function disableBrowserContextMenu(e) {
       e.preventDefault();
     }
-  
+
     document.addEventListener("contextmenu", disableBrowserContextMenu);
-  
+
     return () => {
       document.removeEventListener("contextmenu", disableBrowserContextMenu);
     };
@@ -53,26 +91,65 @@ function App() {
 
   const [confirmModal, setConfirmModal] = useState(null);
 
-function closeConfirmModal() {
-  setConfirmModal(null);
-}
+  function closeConfirmModal() {
+    setConfirmModal(null);
+  }
 
-function requestDeleteList(id) {
-  const list = lists.find(list => list.id === id);
-  if (!list) return;
+  function requestDeleteList(id) {
+    const list = lists.find(list => list.id === id);
+    if (!list) return;
 
-  setConfirmModal({
-    title: "Delete list?",
-    message: `Are you sure you want to delete "${list.name}"? This cannot be undone.`,
-    confirmText: "Delete",
-    cancelText: "Cancel",
-    danger: true,
-    onConfirm: () => {
-      deleteList(id);
-      closeConfirmModal();
-    }
-  });
-}
+    setConfirmModal({
+      title: "Delete list?",
+      message: `Are you sure you want to delete "${list.name}"? This cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      danger: true,
+      onConfirm: () => {
+        deleteList(id);
+        closeConfirmModal();
+      }
+    });
+  }
+
+  // Works out whether the pointer is over the body of a row (nest) or near
+  // one of its edges (reorder), which is what makes drag-to-nest possible.
+  function resolveDropTarget({ active, over, activatorEvent, delta }) {
+    if (!over || over.id === active.id) return null;
+
+    const rect = over.rect;
+    const pointerY = (activatorEvent?.clientY ?? 0) + delta.y;
+    const offset = rect.height ? (pointerY - rect.top) / rect.height : 0.5;
+
+    const activeTask = visibleTasks.find(task => task.id === active.id);
+    const overTask = visibleTasks.find(task => task.id === over.id);
+    if (!activeTask || !overTask) return null;
+
+    const canNest = !visibleTasks.some(task => task.parentId === active.id);
+
+    return { id: over.id, mode: resolveDropMode(offset, canNest, EDGE_BAND) };
+  }
+
+  function handleDragMove(event) {
+    setDropTarget(resolveDropTarget(event));
+  }
+
+  function handleDragEnd(event) {
+    setDropTarget(null);
+    moveTask(event.active.id, resolveDropTarget(event));
+  }
+
+  if (isLoading) {
+    return (
+      <div className="appShell">
+        <main className="app">
+          <section className="listBox emptyListBox">
+            <p>Loading…</p>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="appShell">
@@ -91,27 +168,80 @@ function requestDeleteList(id) {
       <main className="app">
         <h1>{activeList?.name ?? "No List"}</h1>
 
+        {storageError && (
+          <p className="storageWarning">Changes aren&apos;t being saved: {storageError}</p>
+        )}
+
+        {updateStatus?.state === "downloading" && (
+          <p className="updateNotice">
+            Downloading update{typeof updateStatus.percent === "number" ? ` ${updateStatus.percent}%` : ""}…
+          </p>
+        )}
+
+        {updateStatus?.state === "ready" && (
+          <p className="updateNotice">
+            <span>Version {updateStatus.version} is ready.</span>
+            <button type="button" className="updateBtn" onClick={installUpdate}>Restart now</button>
+          </p>
+        )}
+
         {activeList ? (
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
+            collisionDetection={collisionDetection}
             modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
-            onDragEnd={({ active, over }) => reorderTask(active.id, over?.id)}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+            onDragCancel={() => setDropTarget(null)}
           >
             <section className="listBox">
-              <TaskList
-                tasks={sortedTasks}
-                editingId={editingId}
-                editingText={editingText}
-                setEditingText={setEditingText}
-                onToggle={toggleTask}
-                onDelete={deleteTask}
-                onStartEdit={startEdit}
-                onSaveEdit={saveEdit}
-                onEditKeyDown={handleEditKeyDown}
-              />
+              <SortableContext items={renderedEntries.map(entry => entry.task.id)} strategy={noShift}>
+                <TaskList
+                  entries={sections.open}
+                  focusTaskId={focusTaskId}
+                  dropTarget={dropTarget}
+                  onFocusHandled={clearFocusRequest}
+                  onToggle={toggleTask}
+                  onDelete={deleteTask}
+                  onTextChange={setTaskText}
+                  onCommit={commitTask}
+                  onSubmit={submitTask}
+                  onBackspaceEmpty={deleteTaskAndFocusPrevious}
+                  onToggleIndent={toggleTaskIndent}
+                />
 
-              <NewTaskLine value={newTaskText} onChange={setNewTaskText} onKeyDown={handleNewTaskKeyDown} />
+                <NewTaskLine onAdd={addTask} />
+
+                {sections.done.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      className="completedHeader"
+                      onClick={toggleShowCompleted}
+                      aria-expanded={showCompleted}
+                    >
+                      <span className={showCompleted ? "completedChevron isOpen" : "completedChevron"} aria-hidden="true" />
+                      Completed ({sections.done.length})
+                    </button>
+
+                    {showCompleted && (
+                      <TaskList
+                        entries={sections.done}
+                        focusTaskId={focusTaskId}
+                        dropTarget={dropTarget}
+                        onFocusHandled={clearFocusRequest}
+                        onToggle={toggleTask}
+                        onDelete={deleteTask}
+                        onTextChange={setTaskText}
+                        onCommit={commitTask}
+                        onSubmit={submitTask}
+                        onBackspaceEmpty={deleteTaskAndFocusPrevious}
+                        onToggleIndent={toggleTaskIndent}
+                      />
+                    )}
+                  </>
+                )}
+              </SortableContext>
             </section>
           </DndContext>
         ) : (
@@ -121,7 +251,6 @@ function requestDeleteList(id) {
         )}
       </main>
 
-      <ContextMenus onEditTask={startEdit} onDeleteTask={deleteTask} />
       <ConfirmModal
         open={!!confirmModal}
         title={confirmModal?.title}

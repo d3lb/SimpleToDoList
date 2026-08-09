@@ -1,24 +1,32 @@
-import { useContextMenu } from "react-contexify";
 import { useRef } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { TASK_MENU_ID } from "../utils/contextMenuIds";
 import TextInput from "./TextInput";
 
 function TaskRow({
   task,
-  isEditing,
-  editingText,
-  setEditingText,
+  isSubtask,
+  isFocused,
+  dropHint,
+  onFocusHandled,
   onToggle,
   onDelete,
-  onStartEdit,
-  onSaveEdit,
-  onEditKeyDown
+  onTextChange,
+  onCommit,
+  onSubmit,
+  onBackspaceEmpty,
+  onToggleIndent
 }) {
   const skipBlurRef = useRef(false);
-  const { show } = useContextMenu({ id: TASK_MENU_ID });
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: task.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -26,84 +34,99 @@ function TaskRow({
     opacity: isDragging ? 0.5 : 1
   };
 
-  function openTaskMenu(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  
-    show({
-      event: e,
-      props: { task }
-    });
+  const classNames = ["taskLine"];
+  if (isSubtask) classNames.push("subtaskLine");
+  if (isDragging) classNames.push("draggingLine");
+  if (dropHint) classNames.push(`drop-${dropHint}`);
+
+  function handleKeyDown(e) {
+    if (e.key === "Tab") {
+      e.preventDefault();
+
+      // Re-parenting can move this row in the DOM, which fires a blur that
+      // would otherwise be read as leaving the field.
+      skipBlurRef.current = true;
+      setTimeout(() => {
+        skipBlurRef.current = false;
+      }, 0);
+
+      onToggleIndent(task.id, { outdentOnly: e.shiftKey });
+      return;
+    }
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      onSubmit(task.id);
+      return;
+    }
+
+    if (e.key === "Escape") {
+      e.currentTarget.blur();
+      return;
+    }
+
+    if (e.key === "Backspace" && task.text === "") {
+      e.preventDefault();
+      onBackspaceEmpty(task.id);
+    }
   }
 
-  function handleEditBlur() {
+  function handleBlur() {
+    // A right-click inside the input blurs it; that shouldn't count as leaving.
     if (skipBlurRef.current) {
       skipBlurRef.current = false;
       return;
     }
 
-    onSaveEdit(task.id);
-  }
-
-  function startInputContextMenu() {
-    skipBlurRef.current = true;
-  }
-
-  function afterInputMenuAction() {
-    skipBlurRef.current = false;
+    onCommit(task.id);
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={isEditing ? "taskLine editingLine" : "taskLine"}
-      onDoubleClick={() => onStartEdit(task)}
-      onContextMenu={openTaskMenu}
-      {...attributes}
-      {...listeners}
-    >
+    <div ref={setNodeRef} style={style} className={classNames.join(" ")}>
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        className="dragHandle"
+        aria-label="Reorder task"
+        {...attributes}
+        {...listeners}
+        tabIndex={-1}
+      >
+        <span aria-hidden="true" />
+        <span aria-hidden="true" />
+        <span aria-hidden="true" />
+      </button>
+
       <input
         className="taskCheckbox"
         type="checkbox"
         checked={task.done}
+        aria-label={task.text ? `Mark "${task.text}" as done` : "Mark task as done"}
         onChange={() => onToggle(task.id)}
-        onPointerDown={e => e.stopPropagation()}
-        onDoubleClick={e => e.stopPropagation()}
-        onContextMenu={e => e.stopPropagation()}
       />
 
-      {isEditing ? (
-        <TextInput
-          className="editTaskInput"
-          value={editingText}
-          onValueChange={setEditingText}
-          onKeyDown={e => onEditKeyDown(e, task.id)}
-          onBlur={handleEditBlur}
-          onPointerDown={e => e.stopPropagation()}
-          onDoubleClick={e => e.stopPropagation()}
-          onRightClickStart={startInputContextMenu}
-          onAfterMenuAction={afterInputMenuAction}
-          autoFocusSelect
-          contextItems={[
-            { label: "Edit", onClick: () => onStartEdit(task) },
-            { label: "Delete", danger: true, onClick: () => onDelete(task.id) }
-          ]}
-        />
-      ) : (
-        <span className={task.done ? "doneText" : ""}>{task.text}</span>
-      )}
-
-      <button
-        className="deleteBtn"
-        onClick={e => {
-          e.stopPropagation();
-          onDelete(task.id);
+      <TextInput
+        className={task.done ? "taskTextInput doneText" : "taskTextInput"}
+        value={task.text}
+        onValueChange={text => onTextChange(task.id, text)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        focusSignal={isFocused}
+        onFocusHandled={onFocusHandled}
+        onRightClickStart={() => {
+          skipBlurRef.current = true;
         }}
-        onPointerDown={e => e.stopPropagation()}
-        onDoubleClick={e => e.stopPropagation()}
-        onContextMenu={e => e.stopPropagation()}
-      >
+        onAfterMenuAction={() => {
+          skipBlurRef.current = false;
+        }}
+        placeholder={isSubtask ? "Write a subtask" : "Write a task"}
+        contextItems={[
+          { label: isSubtask ? "Make a task" : "Make a subtask", onClick: () => onToggleIndent(task.id) },
+          { label: "Delete", danger: true, onClick: () => onDelete(task.id) }
+        ]}
+      />
+
+      <button className="deleteBtn" aria-label="Delete task" onClick={() => onDelete(task.id)}>
         ×
       </button>
     </div>

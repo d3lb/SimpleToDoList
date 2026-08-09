@@ -1,5 +1,5 @@
 import { Item, Menu, Separator, useContextMenu } from "react-contexify";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
 function TextInput({
   value,
@@ -8,26 +8,63 @@ function TextInput({
   wrapperClassName = "",
   contextItems = [],
   autoFocusSelect = false,
+  focusSignal = false,
+  onFocusHandled,
   onRightClickStart,
   onAfterMenuAction,
   ...props
 }) {
   const inputRef = useRef(null);
   const selectionRef = useRef({ start: 0, end: 0, text: "" });
-  const pasteMenuId = useRef(`input-paste-${Math.random().toString(36).slice(2)}`).current;
-  const fullMenuId = useRef(`input-full-${Math.random().toString(36).slice(2)}`).current;
+  const onFocusHandledRef = useRef(onFocusHandled);
+
+  // Each input owns two menus, so they need ids unique to this instance.
+  // useId is stable across renders; the colons it contains are stripped
+  // because they aren't valid in CSS selectors.
+  const instanceId = useId().replace(/:/g, "");
+  const pasteMenuId = `input-paste-${instanceId}`;
+  const fullMenuId = `input-full-${instanceId}`;
   const { show: showPasteMenu } = useContextMenu({ id: pasteMenuId });
   const { show: showFullMenu } = useContextMenu({ id: fullMenuId });
 
   useEffect(() => {
+    onFocusHandledRef.current = onFocusHandled;
+  });
+
+  // Focus and select everything on mount, used by the inline list rename.
+  // Deferred a frame because the menu that opens the rename takes focus first.
+  useEffect(() => {
     if (!autoFocusSelect) return;
 
-    requestAnimationFrame(() => {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-      saveSelection();
+    const frame = requestAnimationFrame(() => {
+      const input = inputRef.current;
+      if (!input) return;
+
+      input.focus();
+      input.select();
+      selectionRef.current = { start: 0, end: input.value.length, text: input.value };
     });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
   }, [autoFocusSelect]);
+
+  // Lets a parent hand focus to this input (caret at the end) on demand,
+  // e.g. after Enter creates the next task.
+  useEffect(() => {
+    if (!focusSignal) return;
+
+    const input = inputRef.current;
+    if (!input) return;
+
+    const end = input.value.length;
+
+    input.focus();
+    input.setSelectionRange(end, end);
+    selectionRef.current = { start: end, end, text: "" };
+    onFocusHandledRef.current?.();
+  }, [focusSignal]);
 
   function getCurrentSelection() {
     const input = inputRef.current;

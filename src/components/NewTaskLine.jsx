@@ -1,17 +1,10 @@
-import TextInput from "./TextInput";
-
-function NewTaskLine({ value, onChange, onKeyDown }) {
+function NewTaskLine({ onAdd }) {
   return (
-    <div className="taskLine newLine">
-      <input className="taskCheckbox" type="checkbox" disabled />
-      <TextInput
-        className="newTaskInput"
-        value={value}
-        onValueChange={onChange}
-        onKeyDown={onKeyDown}
-        placeholder="Write a new task"
-      />
-    </div>
+    <button type="button" className="taskLine newLine" onClick={onAdd}>
+      <span className="dragHandleSpacer" aria-hidden="true" />
+      <span className="checkboxGhost" aria-hidden="true" />
+      <span className="newTaskHint">Write a new task</span>
+    </button>
   );
 }
 

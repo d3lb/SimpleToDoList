@@ -34,19 +34,27 @@ function ListSidebar({
   }
 
   function handleImport(e) {
-    const file = e.target.files[0];
+    const input = e.target;
+    const file = input.files[0];
     if (!file) return;
 
     const reader = new FileReader();
 
     reader.onload = () => {
       try {
-        onImport(JSON.parse(reader.result));
+        if (onImport(JSON.parse(reader.result)) === false) {
+          alert("This file isn't a Simple List export. Nothing was imported.");
+        }
       } catch {
         alert("Invalid JSON file");
       }
 
-      e.target.value = "";
+      input.value = "";
+    };
+
+    reader.onerror = () => {
+      alert("Could not read that file");
+      input.value = "";
     };
 
     reader.readAsText(file);
