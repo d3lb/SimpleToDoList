@@ -5,6 +5,8 @@ A small desktop to-do app. Lists, tasks, subtasks. Nothing else.
 > [!NOTE]
 > This app was vibe coded and made for my own use and needs.
 
+![Simple List](docs/preview.png)
+
 ## Install
 
 Grab the installer from [Releases](https://github.com/d3lb/SimpleToDoList/releases). It updates itself.
