@@ -10,7 +10,7 @@
     "desktop": "npm run build && electron .",
     "lint": "eslint .",
     "dist": "npm run build && electron-builder --publish never",
-    "release": "npm run build && electron-builder --publish always",
+    "release": "npm run build && node scripts/ensure-release.mjs && electron-builder --publish always",
     "release:patch": "npm version patch && npm run release",
     "release:minor": "npm version minor && npm run release"
   },
