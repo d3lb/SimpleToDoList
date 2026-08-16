@@ -28,6 +28,7 @@ Windows will warn you on first run because the app isn't signed - **More info ->
 | --- | --- |
 | `Enter` | New task below, same level |
 | `Tab` | Toggle subtask |
+| `↑` / `↓` | Move the task up or down |
 | `Backspace` on empty | Delete, caret moves up |
 | `Ctrl`+`Z` | Undo |
 | `Esc` | Stop editing |
