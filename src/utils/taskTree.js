@@ -91,6 +91,7 @@ export function buildSections(tasks) {
 
   for (const task of buildVisibleTasks(tasks)) {
     if (isRoot(task)) target = task.done ? done : open;
+
     target.push({ task, isSubtask: !isRoot(task) });
   }
 
@@ -239,6 +240,25 @@ export function deleteTask(tasks, id) {
   const remaining = tasks.filter(task => task.id !== id && task.parentId !== id);
 
   return syncParents(remaining, parentId);
+}
+
+/**
+ * Nudges a task one slot up (-1) or down (+1) within its own sibling group.
+ * It never changes parent or completion, so it can only swap with a
+ * neighbour that shares both — which keeps it from jumping into the
+ * completed half or out of its parent.
+ */
+export function moveTaskBy(tasks, id, offset) {
+  const task = findTask(tasks, id);
+  if (!task) return tasks;
+
+  const group = getGroup(tasks, task.parentId);
+  const index = group.findIndex(item => item.id === id);
+  const neighbour = group[index + offset];
+
+  if (index === -1 || !neighbour || neighbour.done !== task.done) return tasks;
+
+  return placeInGroup(tasks, id, task.parentId, index + offset);
 }
 
 /**

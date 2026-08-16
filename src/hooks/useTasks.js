@@ -6,6 +6,7 @@ import {
   deleteTask as removeTaskAndChildren,
   hasChildren,
   insertSibling,
+  moveTaskBy,
   removeTaskPromotingChildren,
   toggleIndent,
   toggleTaskDone
@@ -350,6 +351,18 @@ export function useTasks() {
     setFocusTaskId(null);
   }
 
+  // The up/down buttons in a focused row.
+  function nudgeTask(id, offset) {
+    // Keep the caret where it was: the row moves in the DOM, which drops focus.
+    setFocusTaskId(id);
+
+    if (moveTaskBy(tasks, id, offset) === tasks) return;
+
+    pushUndo();
+    deferSaveRef.current = false;
+    updateActiveTasks(prev => moveTaskBy(prev, id, offset));
+  }
+
   function moveTask(activeId, target) {
     if (!target || activeId === target.id) return;
     if (applyDrop(tasks, activeId, target) === tasks) return;
@@ -426,6 +439,7 @@ export function useTasks() {
     commitTask,
     submitTask,
     moveTask,
+    nudgeTask,
     toggleTaskIndent,
     undo,
     importData,

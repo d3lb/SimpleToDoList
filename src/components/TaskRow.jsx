@@ -15,7 +15,8 @@ function TaskRow({
   onCommit,
   onSubmit,
   onBackspaceEmpty,
-  onToggleIndent
+  onToggleIndent,
+  onNudge
 }) {
   const skipBlurRef = useRef(false);
   const {
@@ -39,24 +40,35 @@ function TaskRow({
   if (isDragging) classNames.push("draggingLine");
   if (dropHint) classNames.push(`drop-${dropHint}`);
 
+  // Re-parenting or reordering moves this row in the DOM, which fires a
+  // blur that would otherwise be read as leaving the field.
+  function keepFocusThrough(move) {
+    skipBlurRef.current = true;
+    setTimeout(() => {
+      skipBlurRef.current = false;
+    }, 0);
+
+    move();
+  }
+
   function handleKeyDown(e) {
     if (e.key === "Tab") {
       e.preventDefault();
-
-      // Re-parenting can move this row in the DOM, which fires a blur that
-      // would otherwise be read as leaving the field.
-      skipBlurRef.current = true;
-      setTimeout(() => {
-        skipBlurRef.current = false;
-      }, 0);
-
-      onToggleIndent(task.id);
+      keepFocusThrough(() => onToggleIndent(task.id));
       return;
     }
 
     if (e.key === "Enter") {
       e.preventDefault();
       onSubmit(task.id);
+      return;
+    }
+
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      // In a single-line input these would only jump the caret to either
+      // end, so they're free to reorder instead.
+      e.preventDefault();
+      keepFocusThrough(() => onNudge(task.id, e.key === "ArrowUp" ? -1 : 1));
       return;
     }
 

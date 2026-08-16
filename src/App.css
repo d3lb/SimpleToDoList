@@ -567,16 +567,15 @@ h1 {
     width: 100%;
   }
 }
-/* Update notice */
+/* Update notice: a bar across the very top, above the title and sidebar. */
 
-.updateNotice {
+.updateBar {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0 0 16px;
-  padding: 10px 12px;
-  border: 1px solid #33465c;
-  border-radius: 8px;
+  margin: 0;
+  padding: 10px 16px;
+  border-bottom: 1px solid #33465c;
   background: #1b232d;
   color: #a8c4e0;
   font-size: 14px;

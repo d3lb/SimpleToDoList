@@ -11,7 +11,8 @@ function TaskList({
   onCommit,
   onSubmit,
   onBackspaceEmpty,
-  onToggleIndent
+  onToggleIndent,
+  onNudge
 }) {
   return entries.map(({ task, isSubtask }) => (
     <TaskRow
@@ -28,6 +29,7 @@ function TaskList({
       onSubmit={onSubmit}
       onBackspaceEmpty={onBackspaceEmpty}
       onToggleIndent={onToggleIndent}
+      onNudge={onNudge}
     />
   ));
 }

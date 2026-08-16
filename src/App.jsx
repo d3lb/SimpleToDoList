@@ -52,6 +52,7 @@ function App() {
     commitTask,
     submitTask,
     moveTask,
+    nudgeTask,
     toggleTaskIndent,
     importData,
     exportData,
@@ -152,116 +153,120 @@ function App() {
   }
 
   return (
-    <div className="appShell">
-      <ListSidebar
-        lists={lists}
-        activeListId={activeListId}
-        onSelectList={setActiveListId}
-        onAddList={addList}
-        onDeleteList={requestDeleteList}
-        onRenameList={renameList}
-        onImport={importData}
-        onExport={exportData}
-        onExportAll={exportAllData}
-      />
+    <>
+      {updateStatus?.state === "downloading" && (
+        <p className="updateBar">
+          Downloading update{typeof updateStatus.percent === "number" ? ` ${updateStatus.percent}%` : ""}…
+        </p>
+      )}
 
-      <main className="app">
-        <h1>{activeList?.name ?? "No List"}</h1>
+      {updateStatus?.state === "ready" && (
+        <p className="updateBar">
+          <span>Version {updateStatus.version} is ready.</span>
+          <button type="button" className="updateBtn" onClick={installUpdate}>Restart now</button>
+        </p>
+      )}
 
-        {storageError && (
-          <p className="storageWarning">Changes aren&apos;t being saved: {storageError}</p>
-        )}
+      <div className="appShell">
+        <ListSidebar
+          lists={lists}
+          activeListId={activeListId}
+          onSelectList={setActiveListId}
+          onAddList={addList}
+          onDeleteList={requestDeleteList}
+          onRenameList={renameList}
+          onImport={importData}
+          onExport={exportData}
+          onExportAll={exportAllData}
+        />
 
-        {updateStatus?.state === "downloading" && (
-          <p className="updateNotice">
-            Downloading update{typeof updateStatus.percent === "number" ? ` ${updateStatus.percent}%` : ""}…
-          </p>
-        )}
+        <main className="app">
+          <h1>{activeList?.name ?? "No List"}</h1>
 
-        {updateStatus?.state === "ready" && (
-          <p className="updateNotice">
-            <span>Version {updateStatus.version} is ready.</span>
-            <button type="button" className="updateBtn" onClick={installUpdate}>Restart now</button>
-          </p>
-        )}
+          {storageError && (
+            <p className="storageWarning">Changes aren&apos;t being saved: {storageError}</p>
+          )}
 
-        {activeList ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={collisionDetection}
-            modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-            onDragCancel={() => setDropTarget(null)}
-          >
-            <section className="listBox">
-              <SortableContext items={renderedEntries.map(entry => entry.task.id)} strategy={noShift}>
-                <TaskList
-                  entries={sections.open}
-                  focusTaskId={focusTaskId}
-                  dropTarget={dropTarget}
-                  onFocusHandled={clearFocusRequest}
-                  onToggle={toggleTask}
-                  onDelete={deleteTask}
-                  onTextChange={setTaskText}
-                  onCommit={commitTask}
-                  onSubmit={submitTask}
-                  onBackspaceEmpty={deleteTaskAndFocusPrevious}
-                  onToggleIndent={toggleTaskIndent}
-                />
+          {activeList ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={collisionDetection}
+              modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
+              onDragCancel={() => setDropTarget(null)}
+            >
+              <section className="listBox">
+                <SortableContext items={renderedEntries.map(entry => entry.task.id)} strategy={noShift}>
+                  <TaskList
+                    entries={sections.open}
+                    focusTaskId={focusTaskId}
+                    dropTarget={dropTarget}
+                    onFocusHandled={clearFocusRequest}
+                    onToggle={toggleTask}
+                    onDelete={deleteTask}
+                    onTextChange={setTaskText}
+                    onCommit={commitTask}
+                    onSubmit={submitTask}
+                    onBackspaceEmpty={deleteTaskAndFocusPrevious}
+                    onToggleIndent={toggleTaskIndent}
+                    onNudge={nudgeTask}
+                  />
 
-                <NewTaskLine onAdd={addTask} />
+                  <NewTaskLine onAdd={addTask} />
 
-                {sections.done.length > 0 && (
-                  <>
-                    <button
-                      type="button"
-                      className="completedHeader"
-                      onClick={toggleShowCompleted}
-                      aria-expanded={showCompleted}
-                    >
-                      <span className={showCompleted ? "completedChevron isOpen" : "completedChevron"} aria-hidden="true" />
-                      Completed ({sections.done.length})
-                    </button>
+                  {sections.done.length > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        className="completedHeader"
+                        onClick={toggleShowCompleted}
+                        aria-expanded={showCompleted}
+                      >
+                        <span className={showCompleted ? "completedChevron isOpen" : "completedChevron"} aria-hidden="true" />
+                        Completed ({sections.done.length})
+                      </button>
 
-                    {showCompleted && (
-                      <TaskList
-                        entries={sections.done}
-                        focusTaskId={focusTaskId}
-                        dropTarget={dropTarget}
-                        onFocusHandled={clearFocusRequest}
-                        onToggle={toggleTask}
-                        onDelete={deleteTask}
-                        onTextChange={setTaskText}
-                        onCommit={commitTask}
-                        onSubmit={submitTask}
-                        onBackspaceEmpty={deleteTaskAndFocusPrevious}
-                        onToggleIndent={toggleTaskIndent}
-                      />
-                    )}
-                  </>
-                )}
-              </SortableContext>
+                      {showCompleted && (
+                        <TaskList
+                          entries={sections.done}
+                          focusTaskId={focusTaskId}
+                          dropTarget={dropTarget}
+                          onFocusHandled={clearFocusRequest}
+                          onToggle={toggleTask}
+                          onDelete={deleteTask}
+                          onTextChange={setTaskText}
+                          onCommit={commitTask}
+                          onSubmit={submitTask}
+                          onBackspaceEmpty={deleteTaskAndFocusPrevious}
+                          onToggleIndent={toggleTaskIndent}
+                          onNudge={nudgeTask}
+                        />
+                      )}
+                    </>
+                  )}
+                </SortableContext>
+              </section>
+            </DndContext>
+          ) : (
+            <section className="listBox emptyListBox">
+              <p>Create a list to start.</p>
             </section>
-          </DndContext>
-        ) : (
-          <section className="listBox emptyListBox">
-            <p>Create a list to start.</p>
-          </section>
-        )}
-      </main>
+          )}
+        </main>
 
-      <ConfirmModal
-        open={!!confirmModal}
-        title={confirmModal?.title}
-        message={confirmModal?.message}
-        confirmText={confirmModal?.confirmText}
-        cancelText={confirmModal?.cancelText}
-        danger={confirmModal?.danger}
-        onConfirm={confirmModal?.onConfirm}
-        onCancel={closeConfirmModal}
-      />
-    </div>
+        <ConfirmModal
+          open={!!confirmModal}
+          title={confirmModal?.title}
+          message={confirmModal?.message}
+          confirmText={confirmModal?.confirmText}
+          cancelText={confirmModal?.cancelText}
+          danger={confirmModal?.danger}
+          onConfirm={confirmModal?.onConfirm}
+          onCancel={closeConfirmModal}
+        />
+      </div>
+    </>
   );
 }
 
