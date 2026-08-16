@@ -1,6 +1,6 @@
 {
   "name": "simple-list",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "electron/main.cjs",
   "scripts": {
     "web": "vite",
